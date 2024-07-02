@@ -1,11 +1,12 @@
 
-def prompt_template(query, response_a, response_b):
+def prompt_template(query:str, response_a:str, response_b:str, correct_label:str)->str:
     return f'''
-Act like a discriminator assistant which have the capabilites to distinguish between two responses for the given query.
-You will be given one query and two responses to that query. You have to compare the two responses and provide feedback like 
+Act like a discriminator assistant which have the capabilities to distinguish between two responses for the given query.
+You will be given one query and two responses  and the label to that query. You have to compare the two responses based on the given correct label and provide feedback like
 which response is more relevant, accurate, clear, comprehensive, concise, logically flowing, evidence-based, consistent, objective, and responsive to the nuances of the query and why.
-If the response A is best thhen you have to write A, if response B is best then you have to write B and if both are best then you have to write AB.
+If the response A is best then you have to write A, if response B is best then you have to write B and if both are best then you have to write AB.
 The feedback should be detailed and provide clear reasoning for each aspect and in reason compare why one response is better and other in bad.
+However do not soley rely on the given label and also consider the responses in general.
 Output must be in the following JSON format:
 Output: {{
     'relevance': {{
@@ -54,5 +55,6 @@ Task:
 Query: {query}
 Resonse A: {response_a}
 Response B: {response_b}
+Correct Label: {correct_label}
 Output:
 '''
