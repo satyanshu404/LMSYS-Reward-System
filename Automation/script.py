@@ -12,8 +12,10 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import NoSuchElementException
 import undetected_chromedriver as uc
 from time import sleep
+import pyperclip
 from Automation.constant import *
 from bs4 import BeautifulSoup
 import Automation.tools as tools
@@ -23,17 +25,18 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class LMSYSScraper:
-    def init(self):
-        options = webdriver.ChromeOptions() 
-        # options.add_argument("--headless")
-        options.add_argument("--disable-gpu")
-        self.driver = uc.Chrome(options=options)
-        # self.driver = uc.Chrome()
-        self.driver.get(ScraperConstants.URL)
-        self.element = tools.FindElement(self.driver)
+    def __init__(self):
+        '''Initialize the scraper'''
         self.locator = tools.Locator()
+
+    def initialize(self):
+        '''Initialize the driver'''
+        options = webdriver.ChromeOptions() 
+        options.add_argument("--disable-gpu")       
+        self.driver = uc.Chrome(options=options)
+        self.element = tools.FindElement(self.driver)
+        self.driver.get(ScraperConstants.URL)
         self.alert = tools.AcceptAlert(self.driver).accept()
-        sleep(1)
 
     def check_page(self):
         '''Check the correct page'''
@@ -54,6 +57,14 @@ class LMSYSScraper:
         logging.log(logging.INFO, "Going to the arena page...")
         # Click on the chat button
         self.element.find(self.locator.by_id(ArenaElements.CHAT_ID)).click()
+        return
+    
+    def is_element_present(self, locator:tuple) -> bool:
+        try:
+            self.driver.find_element(locator[0], locator[1])
+            return True
+        except NoSuchElementException:
+            return False
 
     def select_model(self):
         '''Select the model from the listbox'''
@@ -65,12 +76,14 @@ class LMSYSScraper:
     
     def genreate_response(self, message: str):
         '''Generate the response for the given message'''
-        message = message.replace("\n", "\\n")
+        # message = message.replace("\n", "\\n")
+        pyperclip.copy(message)
         # Select textarea 
         textarea = self.element.find(self.locator.by_id(ArenaElements.TEXTAREA_ID))
         logging.log(logging.INFO, "Sending the message...")
         # write the message
-        ActionChains(self.driver).move_to_element(textarea).click().send_keys(message).perform()
+        write_action = ActionChains(self.driver).move_to_element(textarea).click()
+        write_action.key_down(Keys.CONTROL).send_keys('v').key_up(Keys.CONTROL).perform()
         ActionChains(self.driver).move_to_element(textarea).click().send_keys(Keys.ENTER).perform()
         # wait to genreate response
         logging.log(logging.INFO, "Waiting for the response...")
@@ -90,20 +103,46 @@ class LMSYSScraper:
         if splitter_text:
             return text.split(splitter_text)
         return [text]
+    
+    
+    def __del__(self):
+        if hasattr(self, 'driver'):
+            self.driver.close()
+            self.driver.quit()
+            del self.driver
 
+    def cleanup(self):
+        if hasattr(self, 'driver'):
+            self.driver.close()
+            self.driver.quit()
+            del self.driver
 
     def run(self, message:str, splitter_text:str| None = None) -> list[str]:
         '''Scrape the data from the website'''
 
-        self.init()
-        if self.check_page():
-            self.go_to_arena()
-            sleep(1)
-            self.select_model()
-            sleep(1)       
-            self.genreate_response(message)
-            sleep(1)
-            data = self.scrape_data(splitter_text)
+        self.initialize()
         
-        self.driver.quit()
+        # check if the page is loaded successfully
+        if not self.check_page():
+            self.cleanup()
+            return None
+        
+        self.go_to_arena()
+        sleep(1)
+
+        # check for timeout error
+        if self.is_element_present((By.CLASS_NAME, "error")):
+            logging.log(logging.ERROR, "Timeout Error Occured. Retrying...")
+            self.cleanup()
+            return None
+        
+        self.select_model()
+        sleep(1)
+
+        self.genreate_response(message)
+        sleep(1)
+
+        data = self.scrape_data(splitter_text)
+        self.cleanup()
         return data
+            
