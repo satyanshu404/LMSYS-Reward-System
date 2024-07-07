@@ -21,7 +21,7 @@ class FindElement:
             EC.element_to_be_clickable(locator)
         )
         self.driver.execute_script(self.script, element)
-        sleep(1)
+        sleep(0.5)
         return element 
     
 class AcceptAlert:
@@ -56,8 +56,8 @@ class Locator:
     def by_text(self, element_text: str) -> tuple:
         return (By.XPATH, f'//*[contains(text(), "{element_text}")]')
     
-    def by_element(self, element:str, text:str) -> tuple:
-        return (By.XPATH, f'//*[@{element}={text}]')
+    def by_element(self, element_name:str, text:str) -> tuple:
+        return (By.XPATH, f'//*[@{element_name}="{text}"]')
     
     def by_css(self, element_text: str) -> tuple:
         return (By.CSS_SELECTOR, element_text)
