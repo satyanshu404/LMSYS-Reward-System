@@ -10,6 +10,7 @@ import pandas as pd
 from constants import *
 from Automation.script import LMSYSScraper
 import tools
+import threading
 from prompt import prompt_template
 import logging
 
@@ -33,21 +34,48 @@ class ResponseGenerator:
         lambda m: f'\\u{ord(m.group()):04x}',
         text)
         return json.loads(cleaned_text)
+    
+    def find_label(self, ele:dict) -> str:
+        '''Find the correct label for the response'''
+        if int(ele['winner_model_a']) == 1:
+            return 'A'
+        elif int(ele['winner_model_b']) == 1:
+            return 'B'
+        return 'AB'
+    
+    def check_error(self, response: list[str]):
+        '''Check if the response contains any error message'''
+        for error in ResponseGeneratorConstants().ERROR_LIST:
+            if error in response[-1]:
+                logging.log(logging.ERROR, f"{error}, Retrying...")
+                return True
+        return False
+    
+    def get_results(self, message: str, splitter_text: str):
+        result_container = {}
+        thread = threading.Thread(target=self.scraper.run, args=(message, splitter_text, result_container))
+        thread.start()
+        thread.join(ThreadConstants.WAIT_DURATION)
 
+        if thread.is_alive():
+            logging.log(logging.ERROR, f"Script exceeded the time limit of {ThreadConstants.WAIT_DURATION}, Terminating...")
+            self.scraper.cleanup()
+            return None
+        return result_container.get('result', None)
+    
     def generate(self, ele: dict) -> list[str]:
         '''Generate the response for each row'''
         
-        if int(ele['winner_model_a']) == 1:
-            correct_label = 'A'
-        elif int(ele['winner_model_b']) == 1:
-            correct_label = 'B'
-        else:
-            correct_label = 'AB'
+        correct_label = self.find_label(ele)
 
         message = self.create_prompt(ele['prompt'], ele['response_a'], ele['response_b'], correct_label)
-        response = self.scraper.run(message, "Output:")
+        response = self.get_results(message, "Output:")
+        
         if response is None:
             return None
+        if self.check_error(response):
+            return None
+        
         return response[-1]
 
     
