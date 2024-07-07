@@ -46,7 +46,7 @@ class LMSYSScraper:
                 EC.presence_of_element_located(self.locator.by_text(CheckPageConstants.TEXT))
             )
             logging.log(logging.INFO, "Page loaded successfully")
-            sleep(1)
+            sleep(0.5)
             return True
         except Exception as e:
             logging.log(logging.ERROR, f"Couldn't load the page: {e}")
@@ -72,7 +72,6 @@ class LMSYSScraper:
         ActionChains(self.driver).move_to_element(listbox).click().send_keys(Keys.BACKSPACE*150).perform()
         ActionChains(self.driver).move_to_element(listbox).click().send_keys(ArenaElements.MODEL_NAME).perform()
         ActionChains(self.driver).move_to_element(listbox).click().send_keys(Keys.ENTER).perform()
-        sleep(1)
     
     def genreate_response(self, message: str):
         '''Generate the response for the given message'''
@@ -87,9 +86,8 @@ class LMSYSScraper:
         ActionChains(self.driver).move_to_element(textarea).click().send_keys(Keys.ENTER).perform()
         # wait to genreate response
         logging.log(logging.INFO, "Waiting for the response...")
-        sleep(5)
+        sleep(3)
         WebDriverWait(self.driver, ArenaElements.WAIT_DURATION).until(EC.element_to_be_clickable((By.ID, ArenaElements.CLEAR_HISTORY)))
-        sleep(1)
         logging.log(logging.INFO, "Got Response...")
     
     def scrape_data(self, splitter_text:str| None = None)-> list[str]:
@@ -117,32 +115,40 @@ class LMSYSScraper:
             self.driver.quit()
             del self.driver
 
-    def run(self, message:str, splitter_text:str| None = None) -> list[str]:
+    def run(self, message: str, splitter_text: str | None = None, result_container: dict = None):
         '''Scrape the data from the website'''
 
         self.initialize()
-        
+
         # check if the page is loaded successfully
         if not self.check_page():
             self.cleanup()
-            return None
-        
+            result_container['result'] = None
+            return
+
         self.go_to_arena()
-        sleep(1)
+        sleep(0.5)
 
         # check for timeout error
         if self.is_element_present((By.CLASS_NAME, "error")):
-            logging.log(logging.ERROR, "Timeout Error Occured. Retrying...")
+            logging.error("Timeout Error Occured. Retrying...")
             self.cleanup()
-            return None
-        
+            result_container['result'] = None
+            return
+
         self.select_model()
-        sleep(1)
+        sleep(0.5)
+
+        # check for timeout error
+        if self.is_element_present((By.CLASS_NAME, "error")):
+            logging.error("Timeout Error Occured. Retrying...")
+            self.cleanup()
+            result_container['result'] = None
+            return
 
         self.genreate_response(message)
-        sleep(1)
 
         data = self.scrape_data(splitter_text)
         self.cleanup()
-        return data
+        result_container['result'] = data
             
