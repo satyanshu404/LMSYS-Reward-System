@@ -30,13 +30,27 @@ class LMSYSScraper:
         self.locator = tools.Locator()
 
     def initialize(self):
-        '''Initialize the driver'''
-        options = webdriver.ChromeOptions() 
-        options.add_argument("--disable-gpu")       
-        self.driver = uc.Chrome(options=options)
-        self.element = tools.FindElement(self.driver)
-        self.driver.get(ScraperConstants.URL)
-        self.alert = tools.AcceptAlert(self.driver).accept()
+        try:
+            options = uc.ChromeOptions()
+            options.add_argument("--disable-gpu")
+            # options.headless = True
+            self.driver = uc.Chrome(options=options)
+            self.element = tools.FindElement(self.driver)
+            sleep(0.2)
+            self.driver.get(ScraperConstants.URL)
+            self.alert = tools.AcceptAlert(self.driver).accept()
+        except Exception as e:
+            self.cleanup()
+            print(f"Error initializing the driver: {e}")
+
+    # def initialize(self):
+    #     '''Initialize the driver'''
+    #     options = webdriver.ChromeOptions() 
+    #     options.add_argument("--disable-gpu")       
+    #     self.driver = uc.Chrome(options=options)
+    #     self.element = tools.FindElement(self.driver)
+    #     self.driver.get(ScraperConstants.URL)
+    #     self.alert = tools.AcceptAlert(self.driver).accept()
 
     def check_page(self):
         '''Check the correct page'''
@@ -56,6 +70,7 @@ class LMSYSScraper:
         '''Go to the arena page'''
         logging.log(logging.INFO, "Going to the arena page...")
         # Click on the chat button
+        sleep(0.5)
         self.element.find(self.locator.by_id(ArenaElements.CHAT_ID)).click()
         return
     
@@ -83,12 +98,16 @@ class LMSYSScraper:
         # write the message
         write_action = ActionChains(self.driver).move_to_element(textarea).click()
         write_action.key_down(Keys.CONTROL).send_keys('v').key_up(Keys.CONTROL).perform()
+        sleep(0.5)
         ActionChains(self.driver).move_to_element(textarea).click().send_keys(Keys.ENTER).perform()
         # wait to genreate response
         logging.log(logging.INFO, "Waiting for the response...")
-        sleep(3)
+        sleep(1)
+        if self.log_error():
+            return False
         WebDriverWait(self.driver, ArenaElements.WAIT_DURATION).until(EC.element_to_be_clickable((By.ID, ArenaElements.CLEAR_HISTORY)))
         logging.log(logging.INFO, "Got Response...")
+        return True
     
     def scrape_data(self, splitter_text:str| None = None)-> list[str]:
         '''Scrape the data from the website'''
@@ -115,6 +134,14 @@ class LMSYSScraper:
             self.driver.quit()
             del self.driver
 
+    def log_error(self):
+        '''Check for timeout error'''
+        if self.is_element_present((By.CLASS_NAME, "error")):
+            logging.error("Timeout Error Occured. Retrying...")
+            self.cleanup()
+            return True
+        return False
+
     def run(self, message: str, splitter_text: str | None = None, result_container: dict = None):
         '''Scrape the data from the website'''
 
@@ -127,28 +154,29 @@ class LMSYSScraper:
             return
 
         self.go_to_arena()
-        sleep(0.5)
+        sleep(0.3)
 
         # check for timeout error
-        if self.is_element_present((By.CLASS_NAME, "error")):
-            logging.error("Timeout Error Occured. Retrying...")
-            self.cleanup()
+        if self.log_error():
             result_container['result'] = None
             return
 
         self.select_model()
-        sleep(0.5)
+        sleep(0.3)
 
         # check for timeout error
-        if self.is_element_present((By.CLASS_NAME, "error")):
-            logging.error("Timeout Error Occured. Retrying...")
-            self.cleanup()
+        if self.log_error():
             result_container['result'] = None
             return
 
-        self.genreate_response(message)
-
-        data = self.scrape_data(splitter_text)
-        self.cleanup()
-        result_container['result'] = data
+        if self.genreate_response(message):
+            data = self.scrape_data(splitter_text)
+            self.cleanup()
+            result_container['result'] = data
+            return
+        
+        result_container['result'] = None
+        return
+        
+        
             

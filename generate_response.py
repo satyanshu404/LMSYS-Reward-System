@@ -9,6 +9,7 @@ import json
 import pandas as pd
 from constants import *
 from Automation.script import LMSYSScraper
+import pandas as pd
 import tools
 import threading
 from prompt import prompt_template
@@ -56,7 +57,7 @@ class ResponseGenerator:
         thread = threading.Thread(target=self.scraper.run, args=(message, splitter_text, result_container))
         thread.start()
         thread.join(ThreadConstants.WAIT_DURATION)
-
+        
         if thread.is_alive():
             logging.log(logging.ERROR, f"Script exceeded the time limit of {ThreadConstants.WAIT_DURATION}, Terminating...")
             self.scraper.cleanup()

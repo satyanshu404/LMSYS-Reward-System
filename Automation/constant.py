@@ -8,27 +8,26 @@ class ScraperConstants:
 
 @dataclass
 class FindElementConstants:
-    WAIT_DURATION: int = 60
+    WAIT_DURATION: int = 20
     SCRIPT: str = 'arguments[0].scrollIntoView(true);'
 
 @dataclass
 class AcceptAlertConstants:
-    WAIT_DURATION: int = 60
+    WAIT_DURATION: int = 30
 
 @dataclass
 class CheckPageConstants:
     TEXT: str = 'Arena (battle)'
-    WAIT_DURATION: int = 60
+    WAIT_DURATION: int = 20
 
 @dataclass
 class ArenaElements:
     TEXT: str = 'Arena (battle)'
     CHAT_ID: str = 'component-99-button'
     LISTBOX_ID: str = 'component-104'
-    # MODEL_NAME: str = 'claude-3-opus-20240229'
-    # MODEL_NAME:str = 'gpt-4o-2024-05-13'
-    MODEL_NAME: str = 'qwen2-72b-instruct'
+    # MODEL_NAME: str = 'qwen2-72b-instruct'
     # MODEL_NAME: str = 'nemotron-4-340b'
+    MODEL_NAME: str = 'gemma-2-27b-it'
     TEXTAREA_ID: str = 'component-109'
     SUBMIT_BUTTON_ID: str = 'component-111'
     WAIT_DURATION: int = 300

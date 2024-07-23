@@ -2,10 +2,10 @@ from dataclasses import dataclass, field
 
 @dataclass
 class ResponseGeneratorConstants:
-    # FILE_PATH: str = 'data/small-train-gpt-4o-2024-05-13_1.csv'
     # FILE_PATH:str = 'data/small-train-nemotron-4-340b_1.csv'
-    # FILE_PATH:str = 'data/small-train-claude-3-opus-20240229_1.csv'
-    FILE_PATH:str = 'data/small-train-qwen2-72b-instruct.csv'
+    FILE_PATH:str = 'data/small-train-5000-gemma-2-27b-it.csv'
+    # FILE_PATH:str = 'data/qwen_test_df_output.csv'
+    # FILE_PATH:str = 'data/small-train-qwen2-72b-instruct.csv'
     # START: int = 17
     START: int = 0
     NUM_ROWS: int = 658
@@ -15,4 +15,4 @@ class ResponseGeneratorConstants:
     
 @dataclass
 class ThreadConstants:
-    WAIT_DURATION: int = 299
+    WAIT_DURATION: int = 298

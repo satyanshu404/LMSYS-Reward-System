@@ -1,13 +1,60 @@
 
 def prompt_template(query:str, response_a:str, response_b:str, correct_label:str)->str:
     return f'''
-Act like a discriminator assistant which have the capabilities to distinguish between two responses for the given query.
-You will be given one query and two responses  and the label to that query. You have to compare the two responses based on the given correct label and provide feedback like
-which response is more relevant, accurate, clear, comprehensive, concise, logically flowing, evidence-based, consistent, objective, and responsive to the nuances of the query and why.
-If the response A is best then you have to write A, if response B is best then you have to write B and if both are best then you have to write AB and if none of them is best then you have to write NA.
-The feedback should be detailed and provide clear reasoning for each aspect and in reason compare why one response is better and other in bad.
+Act as a discriminator assistant to evaluate and distinguish between two responses for a given query based on the given label.
+You will be provided with a query, two responses and the correct label. Your task is to compare the responses based on various criteria and determine which one is superior in each aspect.
 However do not soley rely on the given label and also consider the responses in general.
-Output must be in the following JSON format:
+
+The criteria are:
+Relevance: Which response directly addresses the query better and provides more pertinent information?
+Accuracy: Which response contains more reliable and factual information based on credible sources?
+Clarity: Which response is more straightforward, easy to understand, and free of ambiguity?
+Completeness: Which response covers all aspects of the query more thoroughly?
+Conciseness: Which response is more succinct and to the point without unnecessary information?
+Logical Flow: Which response presents information in a more organized and coherent manner?
+Evidence & Examples: Which response provides stronger evidence and examples?
+Consistency: Which response maintains internal consistency without contradictions?
+Objectivity: Which response is more unbiased and neutral?
+Responsiveness: Which response better addresses specific details and aspects of the query?
+
+For each criterion, assign one of the following ratings:
+A: Response A is superior
+B: Response B is superior
+AB: Both responses are equally optimal
+NA: Neither response is satisfactory
+
+Provide output as a comma-separated list of ratings, corresponding to the order of criteria listed above.
+For example:
+Output: A,A,NA,AB,B,B,A,A,AB,B
+
+###IMPORTANT NOTES:
+- Do not include any explanations or additional text. Simply provide the comma seperated ratings.
+
+###Task:
+Query: {query}
+Resonse A: {response_a}
+Response B: {response_b}
+Correct Label: {correct_label}
+Output:
+'''
+
+
+def response_generator_prompt(query:str, response_a:str, response_b:str, correct_label:str)->str:
+    return f'''
+As a discriminator professionalist, I have the capability to distinguish between two responses to a given query. 
+My task is to compare the two responses based on the given correct label and provide feedback on various aspects of their quality. 
+Here's how I will proceed:
+ 
+###Input
+I will receive the following inputs:
+
+Query: The question or problem statement that the responses are addressing.
+Response A: The first response to the query.
+Response B: The second response to the query.
+Correct Label: The label indicating which response is deemed correct or most appropriate.
+###Output
+I will evaluate and compare the two responses across multiple criteria, and provide a detailed explanation for each criterion. 
+The output will be in JSON format with the following structure:
 Output:{{
     "response": {{
         "response": "<A/B/AB/NA> Which response is more relevant to the query?",
@@ -51,7 +98,14 @@ Output:{{
     }}
 }}
 
-Task:
+###Evaluation Process
+For each criterion, I will:
+
+- Compare both responses.
+- Provide a verdict on which response (A, B, AB, NA) best meets the criterion.
+- Offer a detailed explanation for my decision with evidence from the text, comparing the strengths and weaknesses of each response.
+
+###Task:
 Query: {query}
 Resonse A: {response_a}
 Response B: {response_b}

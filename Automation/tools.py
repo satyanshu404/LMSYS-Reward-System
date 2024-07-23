@@ -34,6 +34,7 @@ class AcceptAlert:
         WebDriverWait(self.driver, self.duration).until(EC.alert_is_present())
         alert = self.driver.switch_to.alert
         alert.accept()
+        sleep(0.2)
 
 class Locator:
     def __init__(self):
