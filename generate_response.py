@@ -28,13 +28,6 @@ class ResponseGenerator:
     
     def create_prompt(self, query: str, response_a: str, response_b: str, correct_label: str) -> str:
         return prompt_template(query, response_a, response_b, correct_label)
-
-    def clean_text(self, text: str) -> list[str]:
-        cleaned_text = re.sub(
-        r'[\uD800-\uDBFF][\uDC00-\uDFFF]',
-        lambda m: f'\\u{ord(m.group()):04x}',
-        text)
-        return json.loads(cleaned_text)
     
     def find_label(self, ele:dict) -> str:
         '''Find the correct label for the response'''
@@ -48,13 +41,17 @@ class ResponseGenerator:
         '''Check if the response contains any error message'''
         for error in ResponseGeneratorConstants().ERROR_LIST:
             if error in response[-1]:
+                self.scraper.cleanup()
                 logging.log(logging.ERROR, f"{error}, Retrying...")
                 return True
         return False
     
-    def get_results(self, message: str, splitter_text: str):
+    def get_results(self, message: str, run_with_initialization:bool):
         result_container = {}
-        thread = threading.Thread(target=self.scraper.run, args=(message, splitter_text, result_container))
+        if run_with_initialization:
+            thread = threading.Thread(target=self.scraper.run_with_initialization, args=(message, result_container))
+        else:
+            thread = threading.Thread(target=self.scraper.run, args=(message, result_container))
         thread.start()
         thread.join(ThreadConstants.WAIT_DURATION)
         
@@ -62,17 +59,19 @@ class ResponseGenerator:
             logging.log(logging.ERROR, f"Script exceeded the time limit of {ThreadConstants.WAIT_DURATION}, Terminating...")
             self.scraper.cleanup()
             return None
+        
         return result_container.get('result', None)
     
-    def generate(self, ele: dict) -> list[str]:
+    def generate(self, ele: dict, run_with_initialization:bool) -> list[str]:
         '''Generate the response for each row'''
         
         correct_label = self.find_label(ele)
 
         message = self.create_prompt(ele['prompt'], ele['response_a'], ele['response_b'], correct_label)
-        response = self.get_results(message, "Output:")
+        response = self.get_results(message, run_with_initialization)
         
         if response is None:
+            self.scraper.cleanup()
             return None
         if self.check_error(response):
             return None
@@ -82,6 +81,8 @@ class ResponseGenerator:
     
     def run(self, num_of_iteratios: int):
         try:
+            run_with_initialization = True
+            iteration_count = 0
             logging.log(logging.INFO, "Generating responses...")
             df = self.load_data()
 
@@ -96,11 +97,19 @@ class ResponseGenerator:
                     continue
 
                 logging.log(logging.INFO, f"Generating response for row {index}...")
-                response = self.generate(row)
+                response = self.generate(row, run_with_initialization)
                 
                 if response is None:
+                    run_with_initialization = True
                     continue
-                
+                if iteration_count > 100:
+                    self.scraper.cleanup()
+                    run_with_initialization = True
+                    iteration_count = 0
+
+                run_with_initialization = False
+                iteration_count += 1
+                # print(f"{index}: {response}")
                 df.at[index, 'response'] = response                    
                 df.to_csv(ResponseGeneratorConstants.FILE_PATH, index=False)
 
