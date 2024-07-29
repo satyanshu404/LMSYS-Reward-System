@@ -29,6 +29,8 @@ Output: A,A,NA,AB,B,B,A,A,AB,B
 
 ###IMPORTANT NOTES:
 - Do not include any explanations or additional text. Simply provide the comma seperated ratings.
+- The order of ratings should match the order of criteria listed above.
+- There must be exactly 10 ratings in the output.
 
 ###Task:
 Query: {query}
