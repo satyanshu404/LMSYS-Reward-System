@@ -33,6 +33,9 @@ class ArenaElements:
     TEXTAREA_ID: str = 'component-109'
     SUBMIT_BUTTON_ID: str = 'component-111'
     WAIT_DURATION: int = 60
+    PROGRESS_ELEMENT: str = 'progress-text'
+    BOT_ID: str = 'data-testid'
+    BOT_ID_VALUE: str = 'bot'
     SPLITER_TEXT_1: str = 'Scroll down and start chatting'
     SPLITER_TEXT_2: str = 'Textbox'
     CLEAR_HISTORY: str = 'component-118'
