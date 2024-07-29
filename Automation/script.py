@@ -5,6 +5,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.keys import Keys
@@ -35,13 +36,15 @@ class LMSYSScraper:
             options.add_argument("--disable-gpu")
             # options.headless = True
             self.driver = uc.Chrome(options=options)
+            # self.driver.set_window_size(800, 1200)
             self.element = tools.FindElement(self.driver)
             sleep(0.2)
             self.driver.get(ScraperConstants.URL)
             self.alert = tools.AcceptAlert(self.driver).accept()
         except Exception as e:
             self.cleanup()
-            print(f"Error initializing the driver: {e}")
+            logging.log(logging.ERROR, f"Error initializing the driver: {e}")
+
 
     # def initialize(self):
     #     '''Initialize the driver'''
@@ -70,7 +73,6 @@ class LMSYSScraper:
         '''Go to the arena page'''
         logging.log(logging.INFO, "Going to the arena page...")
         # Click on the chat button
-        sleep(0.5)
         self.element.find(self.locator.by_id(ArenaElements.CHAT_ID)).click()
         return
     
@@ -96,30 +98,46 @@ class LMSYSScraper:
         textarea = self.element.find(self.locator.by_id(ArenaElements.TEXTAREA_ID))
         logging.log(logging.INFO, "Sending the message...")
         # write the message
+        sleep(0.2)
         write_action = ActionChains(self.driver).move_to_element(textarea).click()
         write_action.key_down(Keys.CONTROL).send_keys('v').key_up(Keys.CONTROL).perform()
-        sleep(0.5)
+        sleep(0.2)
         ActionChains(self.driver).move_to_element(textarea).click().send_keys(Keys.ENTER).perform()
         # wait to genreate response
         logging.log(logging.INFO, "Waiting for the response...")
-        sleep(1)
+        sleep(0.5)
         if self.log_error():
             return False
+        
+        element_present = EC.presence_of_element_located((By.CLASS_NAME, 'progress-text'))
+        WebDriverWait(self.driver, 10).until(element_present)
+        sleep(0.5)
         WebDriverWait(self.driver, ArenaElements.WAIT_DURATION).until(EC.element_to_be_clickable((By.ID, ArenaElements.CLEAR_HISTORY)))
-        logging.log(logging.INFO, "Got Response...")
+        logging.log(logging.INFO, "Response Generated...")
         return True
     
-    def scrape_data(self, splitter_text:str| None = None)-> list[str]:
-        '''Scrape the data from the website'''
-        page_source = self.driver.page_source
-
-        # Parse the page source with BeautifulSoup
-        soup = BeautifulSoup(page_source, 'html.parser')
-        text = soup.text.split(ArenaElements.SPLITER_TEXT_1)[-1]
-        text = text.split(ArenaElements.SPLITER_TEXT_2)[0]
-        if splitter_text:
-            return text.split(splitter_text)
+    def scrape_data(self)-> list[str]:
+        # self.element.find(self.locator.by_css(".svelte-1s78gfg.latest")) # ((By.CSS_SELECTOR, ".svelte-1s78gfg.latest"))
+        text = self.element.find((By.XPATH, '//*[@data-testid="bot"]')).text
+        WebDriverWait(self.driver, ArenaElements.WAIT_DURATION).until(EC.element_to_be_clickable((By.ID, ArenaElements.CLEAR_HISTORY))).click()
+        sleep(0.5)
+        logging.log(logging.INFO, f"Got Response...")
         return [text]
+    
+    # def scrape_data(self)-> list[str]:
+    #     '''Scrape the data from the website'''
+    #     page_source = self.driver.page_source
+
+    #     # Parse the page source with BeautifulSoup
+    #     soup = BeautifulSoup(page_source, 'html.parser')
+    #     # text = soup.text.split(ArenaElements.SPLITER_TEXT_1)[-1]
+    #     # text = text.split(ArenaElements.SPLITER_TEXT_2)[0]
+    #     # if splitter_text:
+    #     #     return text.split(splitter_text)
+    #     divs = soup.find_all('button', class_='svelte-1s78gfg latest')
+
+    #     text = [div.get_text(strip=True) for div in divs][-1]
+    #     return [text]
     
     
     def __del__(self):
@@ -141,9 +159,9 @@ class LMSYSScraper:
             self.cleanup()
             return True
         return False
-
-    def run(self, message: str, splitter_text: str | None = None, result_container: dict = None):
-        '''Scrape the data from the website'''
+    
+    def run_with_initialization(self, message: str, result_container: dict = None):
+        '''Scrape the data from the website with initialization'''
 
         self.initialize()
 
@@ -170,12 +188,32 @@ class LMSYSScraper:
             return
 
         if self.genreate_response(message):
-            data = self.scrape_data(splitter_text)
-            self.cleanup()
+            data = self.scrape_data()
+            # self.cleanup()
             result_container['result'] = data
             return
         
-        result_container['result'] = None
+        self.cleanup()
+        result_container['result'] = ['NA']
+        return
+    
+
+    def run(self, message: str, result_container: dict = None):
+        '''Scrape the data from the website'''
+
+        # check for timeout error
+        if self.log_error():
+            result_container['result'] = None
+            self.cleanup()
+            return
+
+        if self.genreate_response(message):
+            data = self.scrape_data()
+            result_container['result'] = data
+            return
+        
+        self.cleanup()
+        result_container['result'] = ['NA']
         return
         
         
