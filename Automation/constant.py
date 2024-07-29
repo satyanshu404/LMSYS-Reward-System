@@ -8,7 +8,7 @@ class ScraperConstants:
 
 @dataclass
 class FindElementConstants:
-    WAIT_DURATION: int = 20
+    WAIT_DURATION: int = 10
     SCRIPT: str = 'arguments[0].scrollIntoView(true);'
 
 @dataclass
@@ -18,19 +18,21 @@ class AcceptAlertConstants:
 @dataclass
 class CheckPageConstants:
     TEXT: str = 'Arena (battle)'
-    WAIT_DURATION: int = 20
+    WAIT_DURATION: int = 10
 
 @dataclass
 class ArenaElements:
     TEXT: str = 'Arena (battle)'
     CHAT_ID: str = 'component-99-button'
     LISTBOX_ID: str = 'component-104'
-    # MODEL_NAME: str = 'qwen2-72b-instruct'
+    # MODEL_NAME: str = 'qwen2-72b-instruct' 
     # MODEL_NAME: str = 'nemotron-4-340b'
-    MODEL_NAME: str = 'gemma-2-27b-it'
+    # MODEL_NAME: str = 'gemma-2-27b-it'
+    MODEL_NAME: str = 'llama-3.1-405b-instruct'
+    # MODEL_NAME: str = 'llama-3.1-70b-instruct'
     TEXTAREA_ID: str = 'component-109'
     SUBMIT_BUTTON_ID: str = 'component-111'
-    WAIT_DURATION: int = 300
+    WAIT_DURATION: int = 60
     SPLITER_TEXT_1: str = 'Scroll down and start chatting'
     SPLITER_TEXT_2: str = 'Textbox'
     CLEAR_HISTORY: str = 'component-118'
