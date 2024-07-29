@@ -108,8 +108,8 @@ class LMSYSScraper:
         sleep(0.5)
         if self.log_error():
             return False
-        
-        element_present = EC.presence_of_element_located((By.CLASS_NAME, 'progress-text'))
+        # wait until the progress element is present
+        element_present = EC.presence_of_element_located((By.CLASS_NAME, ArenaElements.PROGRESS_ELEMENT))
         WebDriverWait(self.driver, 10).until(element_present)
         sleep(0.5)
         WebDriverWait(self.driver, ArenaElements.WAIT_DURATION).until(EC.element_to_be_clickable((By.ID, ArenaElements.CLEAR_HISTORY)))
@@ -117,27 +117,11 @@ class LMSYSScraper:
         return True
     
     def scrape_data(self)-> list[str]:
-        # self.element.find(self.locator.by_css(".svelte-1s78gfg.latest")) # ((By.CSS_SELECTOR, ".svelte-1s78gfg.latest"))
-        text = self.element.find((By.XPATH, '//*[@data-testid="bot"]')).text
+        text = self.element.find(self.locator.by_element(ArenaElements.BOT_ID, ArenaElements.BOT_ID_VALUE)).text
         WebDriverWait(self.driver, ArenaElements.WAIT_DURATION).until(EC.element_to_be_clickable((By.ID, ArenaElements.CLEAR_HISTORY))).click()
         sleep(0.5)
         logging.log(logging.INFO, f"Got Response...")
         return [text]
-    
-    # def scrape_data(self)-> list[str]:
-    #     '''Scrape the data from the website'''
-    #     page_source = self.driver.page_source
-
-    #     # Parse the page source with BeautifulSoup
-    #     soup = BeautifulSoup(page_source, 'html.parser')
-    #     # text = soup.text.split(ArenaElements.SPLITER_TEXT_1)[-1]
-    #     # text = text.split(ArenaElements.SPLITER_TEXT_2)[0]
-    #     # if splitter_text:
-    #     #     return text.split(splitter_text)
-    #     divs = soup.find_all('button', class_='svelte-1s78gfg latest')
-
-    #     text = [div.get_text(strip=True) for div in divs][-1]
-    #     return [text]
     
     
     def __del__(self):
